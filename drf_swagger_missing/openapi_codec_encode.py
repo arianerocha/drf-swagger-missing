@@ -11,7 +11,7 @@ def _get_links(document):
     for keys, link in encode.get_links_from_document(document):
         if len(keys) > 1:
             operation_id = '_'.join(keys[1:])
-            tags = keys  # here is the magic
+            tags = [keys[0]] # here is the magic
         else:
             operation_id = keys[0]
             tags = []

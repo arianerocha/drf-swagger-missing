@@ -11,7 +11,8 @@ class BetterSchemaGenerator(SchemaGenerator):
 
     def __init__(self, title=None, url=None, description=None, patterns=None, urlconf=None,
                  definitions=None, version='', check_view_permissions=True):
-        super().__init__(title, url, description, patterns, urlconf)
+        super(BetterSchemaGenerator, self).__init__(
+            title, url, description, patterns, urlconf)
         if isinstance(definitions, list):
             definitions = OrderedDict([(p.title, p) for p in definitions])
         if definitions:
@@ -21,7 +22,7 @@ class BetterSchemaGenerator(SchemaGenerator):
 
     def get_schema(self, request=None, public=False):
         """Add the base path and definitions to the document"""
-        schema = super().get_schema(request, public)
+        schema = super(BetterSchemaGenerator, self).get_schema(request, public)
         schema._base_path = self.prefix
         schema._definitions.update(self.definitions)
         schema._version = self.version
@@ -29,7 +30,8 @@ class BetterSchemaGenerator(SchemaGenerator):
 
     def get_filter_fields(self, path, method, view):
         """Hack to add extra fields"""
-        fields = super().get_filter_fields(path, method, view)
+        fields = super(BetterSchemaGenerator, self).get_filter_fields(
+            path, method, view)
         method_name = getattr(view, 'action', method.lower())
         try:
             fields += view.Meta.fields.get(method_name, [])
@@ -39,7 +41,7 @@ class BetterSchemaGenerator(SchemaGenerator):
         return fields
 
     def get_link(self, path, method, view):
-        link = super().get_link(path, method, view)
+        link = super(BetterSchemaGenerator, self).get_link(path, method, view)
         method = method.lower()
         method_name = getattr(view, 'action', method.lower())
         link._responses = OrderedDict()
@@ -47,12 +49,14 @@ class BetterSchemaGenerator(SchemaGenerator):
         try:
             serializer_name = view.get_serializer().__class__.__name__
             if method_name in ('retrieve', 'update', 'partial_update'):
-                response = coreschema.Response(status=200, schema=coreschema.Ref('%s_read' % serializer_name))
+                response = coreschema.Response(
+                    status=200, schema=coreschema.Ref('%s_read' % serializer_name))
             elif method_name == 'list':
                 response = coreschema.Response(status=200, schema=coreschema.Array(
                     items=coreschema.Ref('%s_read' % serializer_name)))
             elif method_name == 'create':
-                response = coreschema.Response(status=201, schema=coreschema.Ref('%s_write' % serializer_name))
+                response = coreschema.Response(
+                    status=201, schema=coreschema.Ref('%s_write' % serializer_name))
             elif method_name == 'destroy':
                 response = coreschema.Response(status=204)
             else:
@@ -81,7 +85,8 @@ class BetterSchemaGenerator(SchemaGenerator):
         return link
 
     def get_links(self, request=None):
-        """Almost copy of parent, here I use subpath to create the link and save the base path
+        """
+        Almost copy of parent, here I use subpath to create the link and save the base path
         Also I call the new get definitions, which generate object definitions from serializers ued in views"""
         links = OrderedDict()
 
@@ -146,11 +151,12 @@ class BetterSchemaGenerator(SchemaGenerator):
         f = serializer.fields.values()
         for field in serializer.fields.values():
             if isinstance(field, serializers.HiddenField) or write and field.read_only or \
-                            not write and field.write_only:
+                    not write and field.write_only:
                 continue
 
             required = bool(field.required)  # field.required is a list
             field = field_to_schema(field)
             fields.append(field)
 
-        self.definitions[name] = coreschema.Object(title=name, properties=fields)
+        self.definitions[name] = coreschema.Object(
+            title=name, properties=fields)
